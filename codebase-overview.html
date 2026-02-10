@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RAG Chatbot - Codebase Overview</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface-2: #334155;
+      --border: #475569;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-2: #818cf8;
+      --green: #4ade80;
+      --orange: #fb923c;
+      --pink: #f472b6;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      padding: 0;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 3rem 2rem;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 2.4rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+    }
+
+    nav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      gap: 1.5rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    nav a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      padding: 0.4rem 1rem;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+
+    nav a:hover {
+      color: var(--accent);
+      background: var(--surface-2);
+    }
+
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2rem 2rem 4rem;
+    }
+
+    section {
+      margin-bottom: 3rem;
+    }
+
+    h2 {
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 1.2rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--surface-2);
+    }
+
+    h3 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--accent-2);
+      margin: 1.5rem 0 0.7rem;
+    }
+
+    h4 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--green);
+      margin: 1.2rem 0 0.5rem;
+    }
+
+    p { margin-bottom: 0.8rem; }
+
+    a { color: var(--accent); }
+
+    code {
+      font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+      background: var(--surface-2);
+      padding: 0.15em 0.4em;
+      border-radius: 4px;
+      font-size: 0.88em;
+      color: var(--orange);
+    }
+
+    pre {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.2rem;
+      overflow-x: auto;
+      margin: 1rem 0;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+      color: var(--text);
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.92rem;
+    }
+
+    th {
+      background: var(--surface-2);
+      color: var(--accent);
+      font-weight: 600;
+      text-align: left;
+      padding: 0.7rem 1rem;
+      border: 1px solid var(--border);
+    }
+
+    td {
+      padding: 0.6rem 1rem;
+      border: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    tr:hover td { background: var(--surface-2); }
+
+    ul, ol {
+      margin: 0.5rem 0 1rem 1.5rem;
+    }
+
+    li { margin-bottom: 0.3rem; }
+
+    .step {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      border-radius: 8px;
+      padding: 1.2rem 1.5rem;
+      margin: 1rem 0;
+    }
+
+    .step h3 {
+      margin-top: 0;
+      color: var(--accent);
+    }
+
+    .step .file-ref {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-style: italic;
+    }
+
+    .step:nth-child(even) { border-left-color: var(--accent-2); }
+    .step:nth-child(even) h3 { color: var(--accent-2); }
+    .step:nth-child(3n) { border-left-color: var(--green); }
+    .step:nth-child(3n) h3 { color: var(--green); }
+
+    .diagram-container {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 2rem;
+      margin: 1rem 0;
+      overflow-x: auto;
+      display: flex;
+      justify-content: center;
+    }
+
+    .tree {
+      color: var(--green);
+    }
+
+    .tree .file {
+      color: var(--text);
+    }
+
+    .tree .comment {
+      color: var(--text-muted);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.15em 0.5em;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .badge-blue { background: #1e3a5f; color: var(--accent); }
+    .badge-purple { background: #312e81; color: var(--accent-2); }
+    .badge-green { background: #14532d; color: var(--green); }
+
+    .json-block {
+      color: var(--green);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>RAG Chatbot &mdash; Codebase Overview</h1>
+  <p>Retrieval-Augmented Generation system for course materials</p>
+</header>
+
+<nav>
+  <a href="#overview">Overview</a>
+  <a href="#structure">Structure</a>
+  <a href="#technologies">Technologies</a>
+  <a href="#architecture">Architecture</a>
+  <a href="#document-processing">Document Processing</a>
+  <a href="#query-flow">Query Flow</a>
+  <a href="#diagram">Diagram</a>
+</nav>
+
+<main>
+
+  <!-- ================================================================ -->
+  <section id="overview">
+    <h2>Project Overview</h2>
+    <p>
+      This is a <strong>Retrieval-Augmented Generation (RAG) chatbot</strong> designed to answer
+      questions about course materials. Users query a knowledge base of educational content and
+      receive intelligent, context-aware answers powered by Anthropic's Claude AI.
+    </p>
+    <h3>Key Capabilities</h3>
+    <ul>
+      <li>Semantic search over course materials using vector embeddings</li>
+      <li>AI-generated answers with cited sources</li>
+      <li>Multi-turn conversation with session memory</li>
+      <li>Course analytics and discovery</li>
+      <li>Smart course name matching and lesson filtering</li>
+    </ul>
+    <h3>Running the App</h3>
+    <pre><code>./run.sh
+# or: cd backend && uv run uvicorn app:app --reload --port 8000</code></pre>
+    <p>
+      Web UI at <code>http://localhost:8000</code>, API docs at <code>http://localhost:8000/docs</code>.
+      Requires an <code>ANTHROPIC_API_KEY</code> in <code>.env</code>.
+    </p>
+  </section>
+
+  <!-- ================================================================ -->
+  <section id="structure">
+    <h2>Project Structure</h2>
+    <pre><code class="tree"><span class="file">starting-ragchatbot-codebase/</span>
+├── <span class="file">backend/</span>                          <span class="comment"># Python FastAPI backend</span>
+│   ├── <span class="file">app.py</span>                        <span class="comment"># FastAPI entry point &amp; API routes</span>
+│   ├── <span class="file">config.py</span>                     <span class="comment"># Centralized configuration</span>
+│   ├── <span class="file">models.py</span>                     <span class="comment"># Pydantic data models</span>
+│   ├── <span class="file">rag_system.py</span>                 <span class="comment"># Main RAG orchestrator</span>
+│   ├── <span class="file">vector_store.py</span>               <span class="comment"># ChromaDB vector storage</span>
+│   ├── <span class="file">document_processor.py</span>         <span class="comment"># Document parsing &amp; chunking</span>
+│   ├── <span class="file">ai_generator.py</span>               <span class="comment"># Claude AI integration</span>
+│   ├── <span class="file">search_tools.py</span>               <span class="comment"># Tool definitions for AI agent</span>
+│   └── <span class="file">session_manager.py</span>            <span class="comment"># Conversation session handling</span>
+├── <span class="file">frontend/</span>                         <span class="comment"># Vanilla JS/HTML/CSS web UI</span>
+│   ├── <span class="file">index.html</span>
+│   ├── <span class="file">script.js</span>
+│   └── <span class="file">style.css</span>
+├── <span class="file">docs/</span>                             <span class="comment"># Course materials (text files)</span>
+│   ├── course1_script.txt
+│   ├── course2_script.txt
+│   ├── course3_script.txt
+│   └── course4_script.txt
+├── <span class="file">pyproject.toml</span>                    <span class="comment"># Dependencies &amp; project config</span>
+├── <span class="file">uv.lock</span>                           <span class="comment"># Dependency lock file</span>
+├── <span class="file">.env.example</span>                      <span class="comment"># Environment template</span>
+├── <span class="file">run.sh</span>                            <span class="comment"># Startup script</span>
+└── <span class="file">main.py</span>                           <span class="comment"># Root entry point</span></code></pre>
+  </section>
+
+  <!-- ================================================================ -->
+  <section id="technologies">
+    <h2>Technologies</h2>
+    <table>
+      <thead>
+        <tr><th>Component</th><th>Technology</th><th>Version</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Backend Framework</td><td>FastAPI</td><td>0.116.1</td></tr>
+        <tr><td>Web Server</td><td>Uvicorn</td><td>0.35.0</td></tr>
+        <tr><td>Vector Database</td><td>ChromaDB</td><td>1.0.15</td></tr>
+        <tr><td>Embeddings</td><td>Sentence Transformers</td><td>5.0.0</td></tr>
+        <tr><td>AI / LLM</td><td>Anthropic Claude</td><td>0.58.2</td></tr>
+        <tr><td>Python</td><td>CPython</td><td>3.13+</td></tr>
+        <tr><td>Package Manager</td><td>uv</td><td>latest</td></tr>
+        <tr><td>Frontend</td><td>Vanilla JS / HTML / CSS</td><td>&mdash;</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ================================================================ -->
+  <section id="architecture">
+    <h2>Architecture</h2>
+
+    <h3>Backend Modules</h3>
+    <table>
+      <thead>
+        <tr><th>Module</th><th>Role</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>app.py</code></td><td>FastAPI routes: <code>POST /api/query</code>, <code>GET /api/courses</code>, static file serving</td></tr>
+        <tr><td><code>rag_system.py</code></td><td>Central orchestrator &mdash; wires all components together</td></tr>
+        <tr><td><code>ai_generator.py</code></td><td>Claude API client &mdash; sends messages, handles tool-use loop</td></tr>
+        <tr><td><code>search_tools.py</code></td><td>Tool abstraction &mdash; <code>CourseSearchTool</code> + <code>ToolManager</code></td></tr>
+        <tr><td><code>vector_store.py</code></td><td>ChromaDB wrapper &mdash; two collections: <code>course_catalog</code> &amp; <code>course_content</code></td></tr>
+        <tr><td><code>document_processor.py</code></td><td>Parses course text files, extracts metadata, chunks content</td></tr>
+        <tr><td><code>session_manager.py</code></td><td>In-memory conversation history per session (capped at 2 recent exchanges)</td></tr>
+        <tr><td><code>models.py</code></td><td>Pydantic models: <code>Course</code>, <code>Lesson</code>, <code>CourseChunk</code></td></tr>
+        <tr><td><code>config.py</code></td><td>Loads settings from <code>.env</code> (API key, model, chunk params, etc.)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Frontend</h3>
+    <ul>
+      <li><strong>index.html</strong> &mdash; Single-page layout: left sidebar (course stats, suggested questions) + main chat area</li>
+      <li><strong>script.js</strong> &mdash; Session management, API calls via <code>fetch</code>, markdown rendering via <code>marked.js</code></li>
+      <li><strong>style.css</strong> &mdash; Responsive two-column layout with chat bubbles and collapsible sections</li>
+    </ul>
+
+    <h3>Key Design Patterns</h3>
+    <ul>
+      <li><strong>Tool-based agent</strong> &mdash; Claude decides when and how to search, rather than blindly searching on every query</li>
+      <li><strong>Two-collection vector strategy</strong> &mdash; <code>course_catalog</code> for semantic course name resolution, <code>course_content</code> for content search</li>
+      <li><strong>Session-based conversation</strong> &mdash; per-session history (capped) for multi-turn context</li>
+      <li><strong>Sentence-based chunking</strong> &mdash; 800-char chunks with 100-char overlap</li>
+    </ul>
+  </section>
+
+  <!-- ================================================================ -->
+  <section id="document-processing">
+    <h2>Document Processing</h2>
+
+    <h3>Expected Document Format</h3>
+    <pre><code>Course Title: &lt;title&gt;
+Course Link: &lt;url&gt;
+Course Instructor: &lt;name&gt;
+
+Lesson 0: Introduction
+Lesson Link: &lt;url&gt;
+&lt;content...&gt;
+
+Lesson 1: Some Topic
+&lt;content...&gt;</code></pre>
+
+    <h3>Processing Pipeline</h3>
+
+    <div class="step">
+      <h3>1. File Reading</h3>
+      <p class="file-ref">document_processor.py &mdash; <code>read_file()</code></p>
+      <p>Reads the file as UTF-8, falling back to ignoring decode errors on failure.</p>
+    </div>
+
+    <div class="step">
+      <h3>2. Metadata Extraction</h3>
+      <p class="file-ref">document_processor.py &mdash; <code>process_course_document()</code>, lines 110&ndash;146</p>
+      <p>
+        Parses the first ~4 lines for structured metadata: <strong>title</strong>, <strong>link</strong>,
+        and <strong>instructor</strong> using regex patterns like <code>^Course Title:\s*(.+)$</code>.
+        Falls back to the filename as the title if no match is found. Builds a <code>Course</code> Pydantic model.
+      </p>
+    </div>
+
+    <div class="step">
+      <h3>3. Lesson Splitting</h3>
+      <p class="file-ref">document_processor.py &mdash; lines 162&ndash;217</p>
+      <p>
+        Iterates line-by-line looking for lesson markers matching <code>^Lesson\s+(\d+):\s*(.+)$</code>.
+        When a new marker is found, the accumulated content of the previous lesson is finalized.
+        Optionally captures a <code>Lesson Link:</code> on the line immediately after the marker.
+        Each lesson becomes a <code>Lesson</code> model appended to the course.
+      </p>
+    </div>
+
+    <div class="step">
+      <h3>4. Text Chunking</h3>
+      <p class="file-ref">document_processor.py &mdash; <code>chunk_text()</code>, lines 25&ndash;91</p>
+      <p>
+        Normalizes whitespace, then splits into sentences using a regex that respects abbreviations.
+        Builds chunks by accumulating sentences up to <strong>800 characters</strong>.
+        Implements <strong>100-character overlap</strong> &mdash; walks backwards from the end of each chunk
+        to find sentences that fit within the overlap budget; the next chunk starts from those overlapping sentences.
+      </p>
+    </div>
+
+    <div class="step">
+      <h3>5. Chunk Creation</h3>
+      <p class="file-ref">document_processor.py &mdash; lines 182&ndash;197</p>
+      <p>
+        Each chunk becomes a <code>CourseChunk</code> with metadata: <code>course_title</code>,
+        <code>lesson_number</code>, <code>chunk_index</code>.
+        The first chunk of each lesson gets prefixed with <code>"Lesson N content: "</code> for context.
+        The last lesson's chunks get a richer prefix: <code>"Course &lt;title&gt; Lesson N content: "</code>.
+      </p>
+    </div>
+
+    <div class="step">
+      <h3>6. Fallback</h3>
+      <p class="file-ref">document_processor.py &mdash; lines 246&ndash;257</p>
+      <p>
+        If no <code>Lesson N:</code> markers were found at all, the entire document body is chunked as a single flat document.
+      </p>
+    </div>
+
+    <h3>Data Models</h3>
+    <table>
+      <thead>
+        <tr><th>Model</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>Course</code></td><td>Title, link, instructor, list of <code>Lesson</code>s</td></tr>
+        <tr><td><code>Lesson</code></td><td>Lesson number, title, optional link</td></tr>
+        <tr><td><code>CourseChunk</code></td><td>Text content + metadata for vector storage</td></tr>
+      </tbody>
+    </table>
+    <p>
+      The resulting <code>(Course, List[CourseChunk])</code> tuple is then passed to the vector store
+      where chunks are embedded and stored in ChromaDB.
+    </p>
+  </section>
+
+  <!-- ================================================================ -->
+  <section id="query-flow">
+    <h2>Query Flow &mdash; Step by Step</h2>
+
+    <div class="step">
+      <h3>Step 1: Frontend &mdash; User sends a message</h3>
+      <p class="file-ref">frontend/script.js &mdash; <code>sendMessage()</code>, lines 45&ndash;96</p>
+      <ol>
+        <li>User types a question and hits Enter (or clicks Send).</li>
+        <li>Input is disabled, the user message is rendered, and a loading animation is shown.</li>
+        <li>A <code>POST</code> request is sent to <code>/api/query</code>:</li>
+      </ol>
+      <pre><code class="json-block">{ "query": "What is MCP?", "session_id": null }</code></pre>
+      <p><code>session_id</code> is <code>null</code> on the first message of a conversation.</p>
+    </div>
+
+    <div class="step">
+      <h3>Step 2: FastAPI endpoint receives the request</h3>
+      <p class="file-ref">backend/app.py &mdash; <code>query_documents()</code>, lines 56&ndash;74</p>
+      <ol>
+        <li>The <code>QueryRequest</code> Pydantic model validates the body (<code>query</code> + optional <code>session_id</code>).</li>
+        <li>If <code>session_id</code> is null, a new session is created via <code>session_manager.create_session()</code> &mdash; returns <code>"session_1"</code>.</li>
+        <li>Calls <code>rag_system.query(request.query, session_id)</code>.</li>
+      </ol>
+    </div>
+
+    <div class="step">
+      <h3>Step 3: RAG orchestrator processes the query</h3>
+      <p class="file-ref">backend/rag_system.py &mdash; <code>RAGSystem.query()</code>, lines 102&ndash;140</p>
+      <ol>
+        <li>Wraps the query into a prompt: <code>"Answer this question about course materials: {query}"</code></li>
+        <li>Fetches conversation history from <code>SessionManager</code> (formatted string or <code>None</code>).</li>
+        <li>Calls <code>AIGenerator.generate_response()</code> with the prompt, history, tool definitions, and tool manager.</li>
+        <li>After response, collects <code>sources</code> from <code>tool_manager.get_last_sources()</code> and resets them.</li>
+        <li>Saves the exchange to session history via <code>session_manager.add_exchange()</code>.</li>
+      </ol>
+    </div>
+
+    <div class="step">
+      <h3>Step 4: Claude AI decides whether to use tools</h3>
+      <p class="file-ref">backend/ai_generator.py &mdash; <code>generate_response()</code>, lines 43&ndash;87</p>
+      <ol>
+        <li>Builds the system prompt (static instructions + appended conversation history if any).</li>
+        <li>Sends a single <code>user</code> message to the Claude API (<code>claude-sonnet-4-20250514</code>, temperature=0, max_tokens=800) with <code>tool_choice: auto</code>.</li>
+        <li><strong>Two outcomes:</strong>
+          <ul>
+            <li><strong>No tool use</strong> &mdash; Claude answers directly from general knowledge.</li>
+            <li><strong>Tool use</strong> &mdash; Claude wants to search &rarr; proceeds to Step 5.</li>
+          </ul>
+        </li>
+      </ol>
+    </div>
+
+    <div class="step">
+      <h3>Step 5: Tool execution loop</h3>
+      <p class="file-ref">backend/ai_generator.py &mdash; <code>_handle_tool_execution()</code>, lines 89&ndash;135</p>
+      <ol>
+        <li>Appends Claude's response (containing <code>tool_use</code> blocks) as an <code>assistant</code> message.</li>
+        <li>Iterates over each <code>tool_use</code> block and calls <code>tool_manager.execute_tool(name, **input)</code>.</li>
+        <li>Collects all tool results as <code>tool_result</code> messages (keyed by <code>tool_use_id</code>).</li>
+        <li>Sends a <strong>second</strong> API call to Claude with the full message history but <strong>without tools</strong> &mdash; forcing a final text answer.</li>
+      </ol>
+    </div>
+
+    <div class="step">
+      <h3>Step 6: CourseSearchTool executes the vector search</h3>
+      <p class="file-ref">backend/search_tools.py &mdash; <code>CourseSearchTool.execute()</code>, lines 52&ndash;114</p>
+      <ol>
+        <li>Calls <code>vector_store.search(query, course_name, lesson_number)</code>.</li>
+        <li>Formats results as <code>[Course Title - Lesson N]\n&lt;content&gt;</code> blocks.</li>
+        <li>Tracks sources in <code>self.last_sources</code> for the frontend.</li>
+      </ol>
+    </div>
+
+    <div class="step">
+      <h3>Step 7: VectorStore performs semantic search</h3>
+      <p class="file-ref">backend/vector_store.py &mdash; <code>VectorStore.search()</code>, lines 61&ndash;100</p>
+      <ol>
+        <li><strong>Course resolution</strong> &mdash; if <code>course_name</code> was provided, queries <code>course_catalog</code> semantically to find the best matching title.</li>
+        <li><strong>Filter building</strong> &mdash; constructs a ChromaDB <code>where</code> filter from resolved title and/or lesson number.</li>
+        <li><strong>Content search</strong> &mdash; queries <code>course_content</code> with the user's query, applying the filter, returning up to 5 chunks ranked by similarity.</li>
+        <li>Returns a <code>SearchResults</code> dataclass (documents, metadata, distances).</li>
+      </ol>
+    </div>
+
+    <div class="step">
+      <h3>Step 8: Response flows back to the frontend</h3>
+      <p class="file-ref">frontend/script.js &mdash; lines 76&ndash;85</p>
+      <p>The backend returns:</p>
+      <pre><code class="json-block">{
+  "answer": "MCP stands for Model Context Protocol...",
+  "sources": ["Introduction to MCP - Lesson 2", "Introduction to MCP - Lesson 3"],
+  "session_id": "session_1"
+}</code></pre>
+      <ol>
+        <li>Stores the <code>session_id</code> for subsequent messages.</li>
+        <li>Removes the loading animation.</li>
+        <li>Renders the answer as markdown (via <code>marked.parse()</code>).</li>
+        <li>Renders sources in a collapsible <code>&lt;details&gt;</code> element.</li>
+        <li>Re-enables the input.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ================================================================ -->
+  <section id="diagram">
+    <h2>Sequence Diagram</h2>
+    <div class="diagram-container">
+      <pre class="mermaid">
+sequenceDiagram
+    participant U as User
+    participant FE as Frontend
+    participant API as FastAPI
+    participant RAG as RAGSystem
+    participant SM as SessionManager
+    participant AI as AIGenerator
+    participant Claude as Claude API
+    participant TM as ToolManager
+    participant CST as CourseSearchTool
+    participant VS as VectorStore
+    participant DB as ChromaDB
+
+    U->>FE: types question + Enter
+    FE->>FE: disable input, show loading
+    FE->>API: POST /api/query
+
+    alt session_id is null
+        API->>SM: create_session()
+        SM-->>API: session_1
+    end
+
+    API->>RAG: query(query, session_id)
+    RAG->>SM: get_conversation_history()
+    SM-->>RAG: formatted history or None
+
+    RAG->>AI: generate_response(prompt, history, tools)
+    AI->>Claude: messages.create()
+    Claude-->>AI: response
+
+    alt Claude chose to search
+        Note over AI,TM: stop_reason is tool_use
+
+        AI->>TM: execute_tool(search_course_content)
+        TM->>CST: execute(query, course_name, lesson)
+        CST->>VS: search(query, course_name, lesson)
+
+        opt course_name provided
+            VS->>DB: query course_catalog
+            DB-->>VS: resolved course title
+        end
+
+        VS->>VS: build filter
+        VS->>DB: query course_content
+        DB-->>VS: top-k chunks
+        VS-->>CST: SearchResults
+        CST->>CST: format results + track sources
+        CST-->>TM: formatted text
+        TM-->>AI: tool_result
+
+        AI->>Claude: second API call with results
+        Claude-->>AI: final text answer
+    else Claude answered directly
+        Note over AI: stop_reason is end_turn
+    end
+
+    AI-->>RAG: response text
+    RAG->>TM: get_last_sources()
+    TM-->>RAG: sources list
+    RAG->>TM: reset_sources()
+    RAG->>SM: add_exchange()
+    RAG-->>API: answer + sources
+
+    API-->>FE: JSON response
+    FE->>FE: render markdown + sources
+    FE->>U: display response
+      </pre>
+    </div>
+  </section>
+
+</main>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      primaryColor: '#334155',
+      primaryTextColor: '#e2e8f0',
+      primaryBorderColor: '#475569',
+      lineColor: '#38bdf8',
+      secondaryColor: '#1e293b',
+      tertiaryColor: '#0f172a',
+      noteBkgColor: '#334155',
+      noteTextColor: '#e2e8f0',
+      actorBkg: '#1e293b',
+      actorBorder: '#38bdf8',
+      actorTextColor: '#e2e8f0',
+      signalColor: '#e2e8f0',
+      signalTextColor: '#e2e8f0',
+      labelBoxBkgColor: '#1e293b',
+      labelBoxBorderColor: '#475569',
+      labelTextColor: '#e2e8f0',
+      loopTextColor: '#94a3b8',
+      activationBorderColor: '#38bdf8',
+      activationBkgColor: '#334155',
+      sequenceNumberColor: '#0f172a'
+    },
+    sequence: {
+      actorMargin: 50,
+      width: 150,
+      height: 65,
+      mirrorActors: false,
+      useMaxWidth: false
+    }
+  });
+</script>
+
+</body>
+</html>

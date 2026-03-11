@@ -20,6 +20,10 @@ dev = ["pytest>=8.0"]
 [tool.pytest.ini_options]
 testpaths = ["backend/tests"]
 pythonpath = ["backend"]
+markers = [
+    "unit: unit tests for individual components",
+    "api: API endpoint integration tests",
+]
 
 [tool.uv]
 constraint-dependencies = [

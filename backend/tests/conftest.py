@@ -1,5 +1,8 @@
+import os
+import sys
 import pytest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
+from fastapi.testclient import TestClient
 from vector_store import SearchResults
 from tests.helpers import make_text_response, make_tool_use_response  # noqa: F401
 
@@ -69,3 +72,59 @@ def mock_anthropic_client(monkeypatch):
     mock_client.messages.create.return_value = make_text_response("Default mock answer.")
     monkeypatch.setattr("ai_generator.anthropic.Anthropic", lambda **kwargs: mock_client)
     return mock_client
+
+
+# ---------------------------------------------------------------------------
+# Mock RAG system fixture
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def mock_rag_system():
+    """A MagicMock standing in for RAGSystem with sensible defaults."""
+    rag = MagicMock()
+    rag.query.return_value = (
+        "MCP allows AI models to interact with external tools.",
+        [{"text": "MCP Course - Lesson 3", "url": "https://example.com/lesson"}],
+    )
+    rag.get_course_analytics.return_value = {
+        "total_courses": 2,
+        "course_titles": ["MCP Course", "AI Agents"],
+    }
+    rag.session_manager = MagicMock()
+    rag.session_manager.create_session.return_value = "session_1"
+    return rag
+
+
+# ---------------------------------------------------------------------------
+# FastAPI test client
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def client(mock_rag_system):
+    """FastAPI TestClient with the app-level RAGSystem replaced by a mock.
+
+    Patches ``app.rag_system`` so no real vector store, embedding model,
+    or Anthropic API calls are made during API tests.  The working directory
+    is temporarily changed to ``backend/`` so relative paths in app.py
+    (``../frontend``, ``../docs``) resolve correctly.
+    """
+    backend_dir = os.path.join(os.path.dirname(__file__), os.pardir)
+    prev_cwd = os.getcwd()
+    os.chdir(backend_dir)
+
+    # Remove cached app module so it re-imports with our patches active
+    sys.modules.pop("app", None)
+    try:
+        with patch("rag_system.VectorStore"), \
+             patch("rag_system.DocumentProcessor"), \
+             patch("ai_generator.anthropic.Anthropic"):
+            from app import app
+            # Replace the module-level rag_system with our mock
+            import app as app_module
+            app_module.rag_system = mock_rag_system
+
+            with TestClient(app, raise_server_exceptions=False) as tc:
+                yield tc
+    finally:
+        sys.modules.pop("app", None)
+        os.chdir(prev_cwd)

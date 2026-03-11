@@ -4,7 +4,6 @@ from unittest.mock import MagicMock, call
 from ai_generator import AIGenerator
 from tests.helpers import make_text_response, make_tool_use_response
 
-
 TOOLS = [{"name": "search_course_content"}, {"name": "get_course_outline"}]
 
 
@@ -12,7 +11,9 @@ class TestAIGeneratorDirectResponse:
     """Tests where Claude returns text without using any tools."""
 
     def test_returns_text_content(self, mock_anthropic_client):
-        mock_anthropic_client.messages.create.return_value = make_text_response("Hello!")
+        mock_anthropic_client.messages.create.return_value = make_text_response(
+            "Hello!"
+        )
         gen = AIGenerator(api_key="fake", model="claude-sonnet-4-20250514")
 
         result = gen.generate_response(query="Hi")
@@ -26,7 +27,9 @@ class TestAIGeneratorDirectResponse:
 
     def test_conversation_history_appended_to_system(self, mock_anthropic_client):
         gen = AIGenerator(api_key="fake", model="claude-sonnet-4-20250514")
-        gen.generate_response(query="Hi", conversation_history="User: Hello\nAssistant: Hey")
+        gen.generate_response(
+            query="Hi", conversation_history="User: Hello\nAssistant: Hey"
+        )
 
         api_call = mock_anthropic_client.messages.create.call_args
         system = api_call.kwargs["system"]
@@ -60,7 +63,9 @@ class TestAIGeneratorSingleToolRound:
             make_text_response("Here is what I found about MCP."),
         ]
         tool_manager = MagicMock()
-        tool_manager.execute_tool.return_value = "[MCP Course - Lesson 1]\nMCP overview..."
+        tool_manager.execute_tool.return_value = (
+            "[MCP Course - Lesson 1]\nMCP overview..."
+        )
 
         gen = AIGenerator(api_key="fake", model="claude-sonnet-4-20250514")
         result = gen.generate_response(
@@ -69,7 +74,9 @@ class TestAIGeneratorSingleToolRound:
             tool_manager=tool_manager,
         )
 
-        tool_manager.execute_tool.assert_called_once_with("search_course_content", query="MCP")
+        tool_manager.execute_tool.assert_called_once_with(
+            "search_course_content", query="MCP"
+        )
         assert mock_anthropic_client.messages.create.call_count == 2
         assert result == "Here is what I found about MCP."
 
@@ -89,14 +96,19 @@ class TestAIGeneratorSingleToolRound:
             assert c.kwargs["tools"] == TOOLS
             assert c.kwargs["tool_choice"] == {"type": "auto"}
 
-    def test_tool_use_without_tool_manager_returns_fallback(self, mock_anthropic_client):
+    def test_tool_use_without_tool_manager_returns_fallback(
+        self, mock_anthropic_client
+    ):
         mock_anthropic_client.messages.create.return_value = make_tool_use_response(
-            "search_course_content", {"query": "test"},
+            "search_course_content",
+            {"query": "test"},
         )
         gen = AIGenerator(api_key="fake", model="claude-sonnet-4-20250514")
 
         result = gen.generate_response(
-            query="search", tools=TOOLS, tool_manager=None,
+            query="search",
+            tools=TOOLS,
+            tool_manager=None,
         )
         assert isinstance(result, str)
         assert len(result) > 0
@@ -108,8 +120,12 @@ class TestAIGeneratorMultiToolRounds:
     def test_two_sequential_tool_rounds(self, mock_anthropic_client):
         """Claude calls get_course_outline, then search_course_content, then answers."""
         mock_anthropic_client.messages.create.side_effect = [
-            make_tool_use_response("get_course_outline", {"course_name": "MCP"}, tool_id="toolu_1"),
-            make_tool_use_response("search_course_content", {"query": "tools"}, tool_id="toolu_2"),
+            make_tool_use_response(
+                "get_course_outline", {"course_name": "MCP"}, tool_id="toolu_1"
+            ),
+            make_tool_use_response(
+                "search_course_content", {"query": "tools"}, tool_id="toolu_2"
+            ),
             make_text_response("MCP covers tools in lesson 3."),
         ]
         tool_manager = MagicMock()
@@ -127,23 +143,35 @@ class TestAIGeneratorMultiToolRounds:
 
         assert mock_anthropic_client.messages.create.call_count == 3
         assert tool_manager.execute_tool.call_count == 2
-        assert tool_manager.execute_tool.call_args_list[0] == call("get_course_outline", course_name="MCP")
-        assert tool_manager.execute_tool.call_args_list[1] == call("search_course_content", query="tools")
+        assert tool_manager.execute_tool.call_args_list[0] == call(
+            "get_course_outline", course_name="MCP"
+        )
+        assert tool_manager.execute_tool.call_args_list[1] == call(
+            "search_course_content", query="tools"
+        )
         assert result == "MCP covers tools in lesson 3."
 
     def test_stops_after_max_rounds(self, mock_anthropic_client):
         """Even if Claude keeps requesting tools, only 2 rounds are executed."""
         mock_anthropic_client.messages.create.side_effect = [
-            make_tool_use_response("search_course_content", {"query": "a"}, tool_id="toolu_1"),
-            make_tool_use_response("search_course_content", {"query": "b"}, tool_id="toolu_2"),
+            make_tool_use_response(
+                "search_course_content", {"query": "a"}, tool_id="toolu_1"
+            ),
+            make_tool_use_response(
+                "search_course_content", {"query": "b"}, tool_id="toolu_2"
+            ),
             # Third response is also tool_use — but rounds are exhausted
-            make_tool_use_response("search_course_content", {"query": "c"}, tool_id="toolu_3"),
+            make_tool_use_response(
+                "search_course_content", {"query": "c"}, tool_id="toolu_3"
+            ),
         ]
         tool_manager = MagicMock()
         tool_manager.execute_tool.return_value = "some result"
 
         gen = AIGenerator(api_key="fake", model="claude-sonnet-4-20250514")
-        result = gen.generate_response(query="Q", tools=TOOLS, tool_manager=tool_manager)
+        result = gen.generate_response(
+            query="Q", tools=TOOLS, tool_manager=tool_manager
+        )
 
         # 3 API calls: initial + 2 follow-ups
         assert mock_anthropic_client.messages.create.call_count == 3
@@ -159,8 +187,12 @@ class TestAIGeneratorMultiToolRounds:
         snapshots via a side_effect to inspect each call's state.
         """
         responses = [
-            make_tool_use_response("get_course_outline", {"course_name": "X"}, tool_id="toolu_1"),
-            make_tool_use_response("search_course_content", {"query": "Y"}, tool_id="toolu_2"),
+            make_tool_use_response(
+                "get_course_outline", {"course_name": "X"}, tool_id="toolu_1"
+            ),
+            make_tool_use_response(
+                "search_course_content", {"query": "Y"}, tool_id="toolu_2"
+            ),
             make_text_response("Final answer"),
         ]
         snapshots = []
@@ -197,8 +229,12 @@ class TestAIGeneratorMultiToolRounds:
     def test_tools_included_in_all_api_calls(self, mock_anthropic_client):
         """Tools and tool_choice must be present in every API call, not stripped."""
         mock_anthropic_client.messages.create.side_effect = [
-            make_tool_use_response("search_course_content", {"query": "a"}, tool_id="toolu_1"),
-            make_tool_use_response("search_course_content", {"query": "b"}, tool_id="toolu_2"),
+            make_tool_use_response(
+                "search_course_content", {"query": "a"}, tool_id="toolu_1"
+            ),
+            make_tool_use_response(
+                "search_course_content", {"query": "b"}, tool_id="toolu_2"
+            ),
             make_text_response("Done"),
         ]
         tool_manager = MagicMock()
@@ -218,21 +254,27 @@ class TestAIGeneratorToolErrors:
     def test_tool_exception_sent_as_error_result(self, mock_anthropic_client):
         """When execute_tool raises, the error is sent to Claude and the loop stops."""
         mock_anthropic_client.messages.create.side_effect = [
-            make_tool_use_response("search_course_content", {"query": "bad"}, tool_id="toolu_err"),
+            make_tool_use_response(
+                "search_course_content", {"query": "bad"}, tool_id="toolu_err"
+            ),
             make_text_response("Sorry, the search failed."),
         ]
         tool_manager = MagicMock()
         tool_manager.execute_tool.side_effect = RuntimeError("ChromaDB connection lost")
 
         gen = AIGenerator(api_key="fake", model="claude-sonnet-4-20250514")
-        result = gen.generate_response(query="Q", tools=TOOLS, tool_manager=tool_manager)
+        result = gen.generate_response(
+            query="Q", tools=TOOLS, tool_manager=tool_manager
+        )
 
         assert mock_anthropic_client.messages.create.call_count == 2
         assert tool_manager.execute_tool.call_count == 1
         assert result == "Sorry, the search failed."
 
         # Verify the error tool_result was sent to Claude
-        second_call_msgs = mock_anthropic_client.messages.create.call_args_list[1].kwargs["messages"]
+        second_call_msgs = mock_anthropic_client.messages.create.call_args_list[
+            1
+        ].kwargs["messages"]
         tool_result_msg = second_call_msgs[-1]["content"][0]
         assert tool_result_msg["is_error"] is True
         assert "ChromaDB connection lost" in tool_result_msg["content"]
@@ -240,8 +282,12 @@ class TestAIGeneratorToolErrors:
     def test_error_on_second_round_stops_loop(self, mock_anthropic_client):
         """First round succeeds, second round tool raises — loop stops, Claude responds."""
         mock_anthropic_client.messages.create.side_effect = [
-            make_tool_use_response("get_course_outline", {"course_name": "X"}, tool_id="toolu_1"),
-            make_tool_use_response("search_course_content", {"query": "Y"}, tool_id="toolu_2"),
+            make_tool_use_response(
+                "get_course_outline", {"course_name": "X"}, tool_id="toolu_1"
+            ),
+            make_tool_use_response(
+                "search_course_content", {"query": "Y"}, tool_id="toolu_2"
+            ),
             make_text_response("Partial results: outline worked but search failed."),
         ]
         tool_manager = MagicMock()
@@ -251,7 +297,9 @@ class TestAIGeneratorToolErrors:
         ]
 
         gen = AIGenerator(api_key="fake", model="claude-sonnet-4-20250514")
-        result = gen.generate_response(query="Q", tools=TOOLS, tool_manager=tool_manager)
+        result = gen.generate_response(
+            query="Q", tools=TOOLS, tool_manager=tool_manager
+        )
 
         assert mock_anthropic_client.messages.create.call_count == 3
         assert tool_manager.execute_tool.call_count == 2

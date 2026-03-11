@@ -17,10 +17,18 @@ def _make_rag(mock_client):
     mock_config.ANTHROPIC_MODEL = "claude-sonnet-4-20250514"
     mock_config.MAX_HISTORY = 2
 
-    with patch("rag_system.VectorStore"), \
-         patch("rag_system.DocumentProcessor"), \
-         patch("rag_system.anthropic.Anthropic" if False else "ai_generator.anthropic.Anthropic",
-               return_value=mock_client):
+    with (
+        patch("rag_system.VectorStore"),
+        patch("rag_system.DocumentProcessor"),
+        patch(
+            (
+                "rag_system.anthropic.Anthropic"
+                if False
+                else "ai_generator.anthropic.Anthropic"
+            ),
+            return_value=mock_client,
+        ),
+    ):
         rag = RAGSystem(mock_config)
 
     return rag
@@ -32,14 +40,23 @@ class TestRAGSystemQuery:
         client = MagicMock()
         client.messages.create.return_value = make_text_response("Answer")
 
-        with patch("ai_generator.anthropic.Anthropic", return_value=client), \
-             patch("rag_system.VectorStore"), \
-             patch("rag_system.DocumentProcessor"):
-            rag = RAGSystem(MagicMock(
-                CHUNK_SIZE=800, CHUNK_OVERLAP=100, CHROMA_PATH="./t",
-                EMBEDDING_MODEL="m", MAX_RESULTS=5,
-                ANTHROPIC_API_KEY="k", ANTHROPIC_MODEL="m", MAX_HISTORY=2,
-            ))
+        with (
+            patch("ai_generator.anthropic.Anthropic", return_value=client),
+            patch("rag_system.VectorStore"),
+            patch("rag_system.DocumentProcessor"),
+        ):
+            rag = RAGSystem(
+                MagicMock(
+                    CHUNK_SIZE=800,
+                    CHUNK_OVERLAP=100,
+                    CHROMA_PATH="./t",
+                    EMBEDDING_MODEL="m",
+                    MAX_RESULTS=5,
+                    ANTHROPIC_API_KEY="k",
+                    ANTHROPIC_MODEL="m",
+                    MAX_HISTORY=2,
+                )
+            )
             response, sources = rag.query("What is MCP?")
 
         assert isinstance(response, str)
@@ -53,23 +70,36 @@ class TestRAGSystemQuery:
             make_text_response("MCP info here."),
         ]
 
-        with patch("ai_generator.anthropic.Anthropic", return_value=client), \
-             patch("rag_system.VectorStore") as MockVS, \
-             patch("rag_system.DocumentProcessor"):
+        with (
+            patch("ai_generator.anthropic.Anthropic", return_value=client),
+            patch("rag_system.VectorStore") as MockVS,
+            patch("rag_system.DocumentProcessor"),
+        ):
             # Configure the mock vector store instance
             vs_instance = MockVS.return_value
             vs_instance.search.return_value = MagicMock(
-                error=None, is_empty=lambda: False,
-                documents=["MCP overview"], metadata=[{"course_title": "MCP", "lesson_number": 1, "chunk_index": 0}],
+                error=None,
+                is_empty=lambda: False,
+                documents=["MCP overview"],
+                metadata=[
+                    {"course_title": "MCP", "lesson_number": 1, "chunk_index": 0}
+                ],
             )
             vs_instance.get_lesson_link.return_value = "https://example.com/l1"
             vs_instance.get_course_link.return_value = "https://example.com/c"
 
-            rag = RAGSystem(MagicMock(
-                CHUNK_SIZE=800, CHUNK_OVERLAP=100, CHROMA_PATH="./t",
-                EMBEDDING_MODEL="m", MAX_RESULTS=5,
-                ANTHROPIC_API_KEY="k", ANTHROPIC_MODEL="m", MAX_HISTORY=2,
-            ))
+            rag = RAGSystem(
+                MagicMock(
+                    CHUNK_SIZE=800,
+                    CHUNK_OVERLAP=100,
+                    CHROMA_PATH="./t",
+                    EMBEDDING_MODEL="m",
+                    MAX_RESULTS=5,
+                    ANTHROPIC_API_KEY="k",
+                    ANTHROPIC_MODEL="m",
+                    MAX_HISTORY=2,
+                )
+            )
             _, sources = rag.query("What is MCP?")
 
         # Sources should be dicts with text/url keys (not plain strings)
@@ -82,14 +112,23 @@ class TestRAGSystemQuery:
         client = MagicMock()
         client.messages.create.return_value = make_text_response("Answer")
 
-        with patch("ai_generator.anthropic.Anthropic", return_value=client), \
-             patch("rag_system.VectorStore"), \
-             patch("rag_system.DocumentProcessor"):
-            rag = RAGSystem(MagicMock(
-                CHUNK_SIZE=800, CHUNK_OVERLAP=100, CHROMA_PATH="./t",
-                EMBEDDING_MODEL="m", MAX_RESULTS=5,
-                ANTHROPIC_API_KEY="k", ANTHROPIC_MODEL="m", MAX_HISTORY=2,
-            ))
+        with (
+            patch("ai_generator.anthropic.Anthropic", return_value=client),
+            patch("rag_system.VectorStore"),
+            patch("rag_system.DocumentProcessor"),
+        ):
+            rag = RAGSystem(
+                MagicMock(
+                    CHUNK_SIZE=800,
+                    CHUNK_OVERLAP=100,
+                    CHROMA_PATH="./t",
+                    EMBEDDING_MODEL="m",
+                    MAX_RESULTS=5,
+                    ANTHROPIC_API_KEY="k",
+                    ANTHROPIC_MODEL="m",
+                    MAX_HISTORY=2,
+                )
+            )
             rag.query("What is MCP?")
 
         call_kwargs = client.messages.create.call_args.kwargs
@@ -101,14 +140,23 @@ class TestRAGSystemQuery:
         client = MagicMock()
         client.messages.create.return_value = make_text_response("Answer")
 
-        with patch("ai_generator.anthropic.Anthropic", return_value=client), \
-             patch("rag_system.VectorStore"), \
-             patch("rag_system.DocumentProcessor"):
-            rag = RAGSystem(MagicMock(
-                CHUNK_SIZE=800, CHUNK_OVERLAP=100, CHROMA_PATH="./t",
-                EMBEDDING_MODEL="m", MAX_RESULTS=5,
-                ANTHROPIC_API_KEY="k", ANTHROPIC_MODEL="m", MAX_HISTORY=2,
-            ))
+        with (
+            patch("ai_generator.anthropic.Anthropic", return_value=client),
+            patch("rag_system.VectorStore"),
+            patch("rag_system.DocumentProcessor"),
+        ):
+            rag = RAGSystem(
+                MagicMock(
+                    CHUNK_SIZE=800,
+                    CHUNK_OVERLAP=100,
+                    CHROMA_PATH="./t",
+                    EMBEDDING_MODEL="m",
+                    MAX_RESULTS=5,
+                    ANTHROPIC_API_KEY="k",
+                    ANTHROPIC_MODEL="m",
+                    MAX_HISTORY=2,
+                )
+            )
             # Create a session with history
             sid = rag.session_manager.create_session()
             rag.session_manager.add_exchange(sid, "Hi", "Hello!")
@@ -125,22 +173,33 @@ class TestRAGSystemQuery:
             make_text_response("Answer"),
         ]
 
-        with patch("ai_generator.anthropic.Anthropic", return_value=client), \
-             patch("rag_system.VectorStore") as MockVS, \
-             patch("rag_system.DocumentProcessor"):
+        with (
+            patch("ai_generator.anthropic.Anthropic", return_value=client),
+            patch("rag_system.VectorStore") as MockVS,
+            patch("rag_system.DocumentProcessor"),
+        ):
             vs_instance = MockVS.return_value
             vs_instance.search.return_value = MagicMock(
-                error=None, is_empty=lambda: False,
-                documents=["text"], metadata=[{"course_title": "C", "lesson_number": 1, "chunk_index": 0}],
+                error=None,
+                is_empty=lambda: False,
+                documents=["text"],
+                metadata=[{"course_title": "C", "lesson_number": 1, "chunk_index": 0}],
             )
             vs_instance.get_lesson_link.return_value = None
             vs_instance.get_course_link.return_value = "https://example.com"
 
-            rag = RAGSystem(MagicMock(
-                CHUNK_SIZE=800, CHUNK_OVERLAP=100, CHROMA_PATH="./t",
-                EMBEDDING_MODEL="m", MAX_RESULTS=5,
-                ANTHROPIC_API_KEY="k", ANTHROPIC_MODEL="m", MAX_HISTORY=2,
-            ))
+            rag = RAGSystem(
+                MagicMock(
+                    CHUNK_SIZE=800,
+                    CHUNK_OVERLAP=100,
+                    CHROMA_PATH="./t",
+                    EMBEDDING_MODEL="m",
+                    MAX_RESULTS=5,
+                    ANTHROPIC_API_KEY="k",
+                    ANTHROPIC_MODEL="m",
+                    MAX_HISTORY=2,
+                )
+            )
             rag.query("Q")
 
         # After query, sources should have been reset
@@ -150,14 +209,23 @@ class TestRAGSystemQuery:
         client = MagicMock()
         client.messages.create.return_value = make_text_response("General answer")
 
-        with patch("ai_generator.anthropic.Anthropic", return_value=client), \
-             patch("rag_system.VectorStore"), \
-             patch("rag_system.DocumentProcessor"):
-            rag = RAGSystem(MagicMock(
-                CHUNK_SIZE=800, CHUNK_OVERLAP=100, CHROMA_PATH="./t",
-                EMBEDDING_MODEL="m", MAX_RESULTS=5,
-                ANTHROPIC_API_KEY="k", ANTHROPIC_MODEL="m", MAX_HISTORY=2,
-            ))
+        with (
+            patch("ai_generator.anthropic.Anthropic", return_value=client),
+            patch("rag_system.VectorStore"),
+            patch("rag_system.DocumentProcessor"),
+        ):
+            rag = RAGSystem(
+                MagicMock(
+                    CHUNK_SIZE=800,
+                    CHUNK_OVERLAP=100,
+                    CHROMA_PATH="./t",
+                    EMBEDDING_MODEL="m",
+                    MAX_RESULTS=5,
+                    ANTHROPIC_API_KEY="k",
+                    ANTHROPIC_MODEL="m",
+                    MAX_HISTORY=2,
+                )
+            )
             _, sources = rag.query("What is Python?")
 
         assert sources == []
@@ -166,14 +234,23 @@ class TestRAGSystemQuery:
         client = MagicMock()
         client.messages.create.return_value = make_text_response("ok")
 
-        with patch("ai_generator.anthropic.Anthropic", return_value=client), \
-             patch("rag_system.VectorStore"), \
-             patch("rag_system.DocumentProcessor"):
-            rag = RAGSystem(MagicMock(
-                CHUNK_SIZE=800, CHUNK_OVERLAP=100, CHROMA_PATH="./t",
-                EMBEDDING_MODEL="m", MAX_RESULTS=5,
-                ANTHROPIC_API_KEY="k", ANTHROPIC_MODEL="m", MAX_HISTORY=2,
-            ))
+        with (
+            patch("ai_generator.anthropic.Anthropic", return_value=client),
+            patch("rag_system.VectorStore"),
+            patch("rag_system.DocumentProcessor"),
+        ):
+            rag = RAGSystem(
+                MagicMock(
+                    CHUNK_SIZE=800,
+                    CHUNK_OVERLAP=100,
+                    CHROMA_PATH="./t",
+                    EMBEDDING_MODEL="m",
+                    MAX_RESULTS=5,
+                    ANTHROPIC_API_KEY="k",
+                    ANTHROPIC_MODEL="m",
+                    MAX_HISTORY=2,
+                )
+            )
 
         tool_names = {d["name"] for d in rag.tool_manager.get_tool_definitions()}
         assert tool_names == {"search_course_content", "get_course_outline"}

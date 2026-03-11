@@ -3,10 +3,10 @@ from unittest.mock import MagicMock
 from vector_store import SearchResults
 from tests.helpers import make_text_response, make_tool_use_response  # noqa: F401
 
-
 # ---------------------------------------------------------------------------
 # Search result fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def sample_search_results():
@@ -40,6 +40,7 @@ def error_search_results():
 # Mock VectorStore
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def mock_vector_store(sample_search_results):
     """A MagicMock standing in for VectorStore with sensible defaults."""
@@ -66,6 +67,10 @@ def mock_anthropic_client(monkeypatch):
     Returns the mock client so tests can configure `messages.create`.
     """
     mock_client = MagicMock()
-    mock_client.messages.create.return_value = make_text_response("Default mock answer.")
-    monkeypatch.setattr("ai_generator.anthropic.Anthropic", lambda **kwargs: mock_client)
+    mock_client.messages.create.return_value = make_text_response(
+        "Default mock answer."
+    )
+    monkeypatch.setattr(
+        "ai_generator.anthropic.Anthropic", lambda **kwargs: mock_client
+    )
     return mock_client
